@@ -1,6 +1,6 @@
 # Storage DSLink
 
-A Key:Value Storage System for DSA.
+A Key-Value Storage System for DSA.
 
 ## Usage
 
