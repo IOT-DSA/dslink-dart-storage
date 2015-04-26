@@ -1,0 +1,5 @@
+name: dslink_storage
+description: Key:Value Storage for DSA
+dependencies:
+  dslink:
+    git: https://github.com/IOT-DSA/sdk-dslink-dart.git
