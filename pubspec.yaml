@@ -1,5 +1,9 @@
-name: dslink_storage
-description: Key:Value Storage for DSA
+name: dslink_chromecast
+description: Chromecast DSLink
 dependencies:
   dslink:
     git: https://github.com/IOT-DSA/sdk-dslink-dart.git
+  chromecast:
+    git: https://github.com/DirectMyFile/chromecast.dart.git
+  upnp:
+    git: https://github.com/DirectMyFile/upnp.dart.git
