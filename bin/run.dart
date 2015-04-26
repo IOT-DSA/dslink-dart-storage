@@ -1,102 +1,125 @@
-import "dart:async";
-
 import "package:dslink/client.dart";
 import "package:dslink/responder.dart";
-import "package:chromecast/chromecast.dart";
-import "package:upnp/upnp.dart";
 
 LinkProvider link;
-DeviceDiscoverer discoverer = new DeviceDiscoverer();
 
 main(List<String> args) async {
-  link = new LinkProvider(args, "Chromecast-", command: "run", defaultNodes: {
-    "Last_Device_Scan": {
-      r"$name": "Last Device Scan",
-      r"$type": "int",
-      "?value": 0
+  link = new LinkProvider(args, "Storage-", command: "run", defaultNodes: {
+    "Create Bucket": {
+      r"$is": "createBucket",
+      r"$invokable": "write",
+      r"$result": "values",
+      r"$params": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      r"$columns": []
     }
-  }, profiles: {});
+  }, profiles: {
+    "createBucket": (String path) => new CreateBucketNode(path),
+    "deleteBucket": (String path) => new DeleteNode(path, 1),
+    "createEntry": (String path) => new CreateEntryNode(path),
+    "deleteEntry": (String path) => new DeleteNode(path, 2)
+  });
 
   if (link.link == null) return;
 
   link.connect();
-
-  rootNode = link.provider.getNode("/");
-
-  new Timer.periodic(new Duration(seconds: 30), (_) async {
-    await updateDevices();
-  });
-
-  new Timer.periodic(new Duration(seconds: 10), (_) async {
-    await updateStatus();
-  });
-
-  await updateDevices();
-  await updateStatus();
 }
 
-List<DiscoveredDevice> devices;
-
-SimpleNode rootNode;
-
-updateStatus() async {
-  for (var k in chromecasts.keys) {
-    var status = await chromecasts[k].getReceiverChannel().sendRequest({
-      "type": "GET_STATUS"
-    });
-
-    (rootNode.getChild(k).getChild("Status") as SimpleNode).updateValue(status);
-  }
-
-  (rootNode.getChild("Last_Device_Scan") as SimpleNode).updateValue(new DateTime.now().millisecondsSinceEpoch);
-}
-
-updateDevices() async {
-  List<DiscoveredDevice> devices = await discoverer.discoverDevices(type: CommonDevices.CHROMECAST);
-  var toRemove = rootNode.children.keys.where((n) => !devices.any((d) => d.uuid != n)).toList();
-  toRemove.forEach((it) => rootNode.removeChild(it));
-  for (var device in devices) {
-    if (rootNode.children.keys.contains(device.uuid)) {
-      continue;
-    }
-
-    print("Discovered Device: ${device.uuid}");
-
-    var host = Uri.parse(device.location).host;
-    chromecasts[device.uuid] = new Chromecast(host);
-    link.provider.addNode("/${device.uuid}", {
-      "Launch": {
-        r"$is": "launch",
-        r"$invokable": "write",
-        r"$params": [
-          {
-            "name": "app",
-            "type": "string"
-          }
-        ]
-      },
-      "Status": {
-        r"$type": "map",
-        r"?value": {}
-      }
-    });
-  }
-}
-
-class LaunchNode extends SimpleNode {
-  LaunchNode(String path) : super(path);
+class CreateBucketNode extends SimpleNode {
+  CreateBucketNode(String name) : super(name);
 
   @override
   Object onInvoke(Map<String, dynamic> params) {
-    var uuid = path.split("/")[1];
-    if (params["app"] == null) return {};
-    CastChannel channel = chromecasts[uuid].getReceiverChannel();
-    channel.sendRequest({
-      "type": "LAUNCH",
-      "appId": params["app"]
+    if (params["name"] == null) return {};
+
+    var name = params["name"];
+
+    link.provider.addNode("/${name}", {
+      "Create Entry": {
+        r"$is": "createEntry",
+        r"$invokable": "write",
+        r"$result": "values",
+        r"$params": [
+          {
+            "name": "key",
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "type": "string"
+          }
+        ],
+        r"$columns": []
+      },
+      "Delete Bucket": {
+        r"$is": "deleteBucket",
+        r"$invokable": "write",
+        r"$result": "values",
+        r"$params": [],
+        r"$columns": []
+      }
     });
+
+    link.save();
     return {};
   }
 }
 
-Map<String, Chromecast> chromecasts = {};
+class CreateEntryNode extends SimpleNode {
+  CreateEntryNode(String path) : super(path);
+
+  @override
+  Object onInvoke(Map<String, dynamic> params) {
+    if (params["key"] == null || params["type"] == null) {
+      return {};
+    }
+
+    var key = params["key"];
+    var type = params["type"];
+
+    SimpleNode holder = link.provider.getNode(path.split("/").take(2).join("/"));
+    link.provider.addNode("${holder.path}/${key}", {
+      "Delete Entry": {
+        r"$is": "deleteEntry",
+        r"$invokable": "write",
+        r"$result": "values",
+        r"$params": [],
+        r"$columns": []
+      },
+      r"$type": type,
+      r"$writable": "write",
+      "?value": null
+    });
+
+    listeners["${holder.path}/${key}"] = (link.provider.getNode("${holder.path}/${key}") as SimpleNode).subscribe((value) {
+      link.save();
+    });
+
+    link.save();
+    return {};
+  }
+}
+
+Map<String, RespSubscribeListener> listeners = {};
+
+class DeleteNode extends SimpleNode {
+  final int parts;
+
+  DeleteNode(String path, this.parts) : super(path);
+
+  @override
+  Object onInvoke(Map<String, dynamic> params) {
+    var p = path.split("/").take(parts + 1).join("/");
+    link.provider.removeNode(p);
+    if (listeners.containsKey(p)) {
+      listeners[p].cancel();
+      listeners.remove(p);
+    }
+    link.save();
+    return {};
+  }
+}

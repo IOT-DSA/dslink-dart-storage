@@ -1,6 +1,6 @@
-# Chromecast DSLink
+# Storage DSLink
 
-A DSLink for Chromecast.
+A Key:Value Storage System for DSA.
 
 ## Usage
 
