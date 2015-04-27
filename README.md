@@ -4,7 +4,7 @@ A Key-Value Storage System for DSA.
 
 ## Concepts
 
-If you want to think in terms of JSON, the storage system thinks in terms of a map of a string to a map a string and a value. Confused? Take a look:
+If you want to think in terms of JSON, the storage system is a map of a string to a map a string and a value. Confused? Take a look:
 
 ```json
 {
