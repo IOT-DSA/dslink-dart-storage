@@ -12,3 +12,5 @@ out/
 *.iml
 .c9*
 .dslink.key
+nodes.json
+
