@@ -38,7 +38,7 @@ class CreateBucketNode extends SimpleNode {
 
     var name = params["name"];
 
-    link.provider.addNode("/${name}", {
+    link.addNode("/${name}", {
       "Create Entry": {
         r"$is": "createEntry",
         r"$invokable": "write",
@@ -114,7 +114,7 @@ class DeleteNode extends SimpleNode {
   @override
   Object onInvoke(Map<String, dynamic> params) {
     var p = path.split("/").take(parts + 1).join("/");
-    link.provider.removeNode(p);
+    link.removeNode(p);
     if (listeners.containsKey(p)) {
       listeners[p].cancel();
       listeners.remove(p);
