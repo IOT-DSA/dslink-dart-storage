@@ -1,5 +1,5 @@
 {
-  "name": "storage",
+  "name": "dslink-dart-storage",
   "version": "1.0.0",
   "description": "Storage DSLink",
   "main": "bin/run.dart",
