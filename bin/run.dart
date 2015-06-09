@@ -7,7 +7,20 @@ LinkProvider link;
 
 main(List<String> args) async {
   link = new LinkProvider(args, "Storage-", command: "run", defaultNodes: {
-    r"$is": "bucket"
+    /*r"$is": "bucket"*/
+    "Create_Bucket": {
+      r"$name": "Create Bucket",
+      r"$is": "createBucket",
+      r"$invokable": "write",
+      r"$result": "values",
+      r"$params": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      r"$columns": []
+    }
   }, profiles: {
     "createBucket": (String path) => new SimpleActionNode(path, (Map<String, dynamic> params) {
       var name = params["name"];
@@ -44,8 +57,9 @@ main(List<String> args) async {
     }),
     "bucket": (String path) => new BucketNode(path),
     "entry": (String path) => new EntryNode(path)
-  });
+  }, autoInitialize: false);
 
+  link.init();
   link.connect();
 }
 
@@ -94,6 +108,17 @@ class BucketNode extends SimpleNode {
             "array",
             "map"
           ])
+        },
+        {
+          "name": "editor",
+          "type": buildEnumType([
+            "none",
+            "textarea",
+            "password",
+            "daterange",
+            "date"
+          ]),
+          "default": "none"
         }
       ],
       r"$columns": []
