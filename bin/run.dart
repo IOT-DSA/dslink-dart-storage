@@ -25,7 +25,8 @@ final Map<String, dynamic> CREATE_ENTRY = {
         "gradient",
         "fill",
         "array",
-        "map"
+        "map",
+        "binary"
       ])
     },
     {
