@@ -95,7 +95,7 @@ main(List<String> args) async {
       link.addNode(t, {
         r"$is": "bucket"
       });
-      link.save();
+      isSaveScheduled = true;
     }),
     "cloneBucket": (String path) => new SimpleActionNode(path, (Map<String, dynamic> params) {
       var tpath = new Path(path);
@@ -105,8 +105,8 @@ main(List<String> args) async {
 
       var npath = "${targetBucketPath == '/' ? '' : targetBucketPath}/${name}";
 
-      link.addNode(npath, sourceBucket.save(false));
-      link.save();
+      link.addNode(npath, sourceBucket.save());
+      isSaveScheduled = true;
     }),
     "delete": (String path) => new SimpleActionNode(path, (Map<String, dynamic> params) {
       var p = new Path(path).parentPath;
@@ -115,24 +115,31 @@ main(List<String> args) async {
         listeners[p].cancel();
         listeners.remove(p);
       }
-      link.save();
+      isSaveScheduled = true;
       return {};
     }),
     "createEntry": (String path) => new SimpleActionNode(path, (Map<String, dynamic> params) {
       var name = params["name"];
       var type = params["type"];
+      var editor = params["editor"];
 
       var x = new Path(path).parentPath;
 
       var p = "${x == '/' ? '' : x}/${name}";
 
-      link.addNode(p, {
+      var map = {
         r"$is": "entry",
         r"$type": type,
         r"$writable": "write"
-      });
+      };
 
-      link.save();
+      if (editor != null && editor != "none") {
+        map[r"$editor"] = editor;
+      }
+
+      link.addNode(p, map);
+
+      isSaveScheduled = true;
     }),
     "bucket": (String path) {
       link.removeNode("${path}/Create_Bucket");
@@ -168,8 +175,20 @@ main(List<String> args) async {
   link.addNode("/Create_Bucket", CREATE_BUCKET);
   link.addNode("/Create_Entry", CREATE_ENTRY);
 
+  timer = new Timer.periodic(new Duration(seconds: 1), (_) async {
+    if (isSaveScheduled) {
+      await link.saveAsync();
+      isSaveScheduled = false;
+    }
+  });
+
+  isSaveScheduled = true;
   link.connect();
 }
+
+bool isSaveScheduled = false;
+
+Timer timer;
 
 class BucketNode extends SimpleNode {
   BucketNode(String path) : super(path);
@@ -224,7 +243,7 @@ class EntryNode extends SimpleNode {
     });
 
     listeners[path] = link.onValueChange(path).listen((x) async {
-      await link.saveAsync();
+      isSaveScheduled = true;
     });
   }
 
