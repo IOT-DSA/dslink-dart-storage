@@ -182,7 +182,6 @@ main(List<String> args) async {
     }
   });
 
-  isSaveScheduled = true;
   link.connect();
 }
 
