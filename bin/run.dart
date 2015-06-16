@@ -175,7 +175,7 @@ main(List<String> args) async {
   link.addNode("/Create_Bucket", CREATE_BUCKET);
   link.addNode("/Create_Entry", CREATE_ENTRY);
 
-  timer = new Timer.periodic(new Duration(seconds: 1), (_) async {
+  timer = Scheduler.every(Interval.ONE_SECOND, () async {
     if (isSaveScheduled) {
       await link.saveAsync();
       isSaveScheduled = false;
