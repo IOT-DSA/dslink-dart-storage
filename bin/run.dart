@@ -58,6 +58,20 @@ final Map<String, dynamic> CREATE_BUCKET = {
   r"$columns": []
 };
 
+final Map<String, dynamic> CLONE_BUCKET = {
+  r"$name": "Clone Bucket",
+  r"$is": "cloneBucket",
+  r"$invokable": "write",
+  r"$result": "values",
+  r"$params": [
+    {
+      "name": "name",
+      "type": "string"
+    }
+  ],
+  r"$columns": []
+};
+
 class StorageNodeProvider extends SimpleNodeProvider implements SerializableNodeProvider, MutableNodeProvider {
   @override
   Map save() {
@@ -81,6 +95,17 @@ main(List<String> args) async {
       link.addNode(t, {
         r"$is": "bucket"
       });
+      link.save();
+    }),
+    "cloneBucket": (String path) => new SimpleActionNode(path, (Map<String, dynamic> params) {
+      var tpath = new Path(path);
+      BucketNode sourceBucket = link[tpath.parentPath];
+      var targetBucketPath = new Path(tpath.parentPath).parentPath;
+      var name = params["name"];
+
+      var npath = "${targetBucketPath == '/' ? '' : targetBucketPath}/${name}";
+
+      link.addNode(npath, sourceBucket.save(false));
       link.save();
     }),
     "delete": (String path) => new SimpleActionNode(path, (Map<String, dynamic> params) {
@@ -112,10 +137,12 @@ main(List<String> args) async {
     "bucket": (String path) {
       link.removeNode("${path}/Create_Bucket");
       link.removeNode("${path}/Create_Entry");
+      link.removeNode("${path}/Clone_Bucket");
       link.removeNode("${path}/Delete_Bucket");
 
       link.addNode("${path}/Create_Bucket", CREATE_BUCKET);
       link.addNode("${path}/Create_Entry", CREATE_ENTRY);
+      link.addNode("${path}/Clone_Bucket", CLONE_BUCKET);
 
       link.addNode("${path}/Delete_Bucket", {
         r"$name": "Delete Bucket",
@@ -151,6 +178,7 @@ class BucketNode extends SimpleNode {
   void onCreated() {
     link.addNode("${path}/Create_Bucket", CREATE_BUCKET);
     link.addNode("${path}/Create_Entry", CREATE_ENTRY);
+    link.addNode("${path}/Clone_Bucket", CLONE_BUCKET);
 
     link.addNode("${path}/Delete_Bucket", {
       r"$name": "Delete Bucket",
@@ -163,11 +191,14 @@ class BucketNode extends SimpleNode {
   }
 
   @override
-  Map save() {
+  Map save([bool clean = true]) {
     var x = super.save();
-    x.remove("Create_Bucket");
-    x.remove("Create_Entry");
-    x.remove("Delete_Bucket");
+    if (clean) {
+      x.remove("Create_Bucket");
+      x.remove("Create_Entry");
+      x.remove("Clone_Bucket");
+      x.remove("Delete_Bucket");
+    }
     return x;
   }
 }
@@ -188,8 +219,8 @@ class EntryNode extends SimpleNode {
       r"$columns": []
     });
 
-    listeners[path] = link.onValueChange(path).listen((x) {
-      link.save();
+    listeners[path] = link.onValueChange(path).listen((x) async {
+      await link.saveAsync();
     });
   }
 
