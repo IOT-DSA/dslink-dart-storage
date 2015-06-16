@@ -99,7 +99,7 @@ main(List<String> args) async {
     }),
     "cloneBucket": (String path) => new SimpleActionNode(path, (Map<String, dynamic> params) {
       var tpath = new Path(path);
-      BucketNode sourceBucket = link[tpath.parentPath];
+      var sourceBucket = link[tpath.parentPath];
       var targetBucketPath = new Path(tpath.parentPath).parentPath;
       var name = params["name"];
 
@@ -207,7 +207,11 @@ class EntryNode extends SimpleNode {
   EntryNode(String path) : super(path);
 
   @override
-  onCreated() {
+  void onCreated() {
+    link.addNode("${path}/Create_Bucket", CREATE_BUCKET);
+    link.addNode("${path}/Create_Entry", CREATE_ENTRY);
+    link.addNode("${path}/Clone", CLONE_BUCKET);
+
     link.removeNode("${path}/Delete_Entry");
 
     link.addNode("${path}/Delete_Entry", {
@@ -225,9 +229,15 @@ class EntryNode extends SimpleNode {
   }
 
   @override
-  Map save() {
+  Map save([bool clean = true]) {
     var x = super.save();
-    x.remove("Delete_Entry");
+    if (clean) {
+      x.remove("Create_Bucket");
+      x.remove("Create_Entry");
+      x.remove("Clone_Bucket");
+      x.remove("Delete_Bucket");
+      x.remove("Delete_Entry");
+    }
     return x;
   }
 }
