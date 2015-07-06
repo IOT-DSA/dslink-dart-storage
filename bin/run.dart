@@ -226,7 +226,7 @@ class BucketNode extends SimpleNode {
 }
 
 class EntryNode extends SimpleNode {
-  EntryNode(String path) : super(path);
+  EntryNode(String path) : super(path, link.provider);
 
   @override
   void onCreated() {
