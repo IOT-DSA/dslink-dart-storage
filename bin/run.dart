@@ -100,7 +100,7 @@ main(List<String> args) async {
         r"$is": "bucket"
       });
       isSaveScheduled = true;
-    }),
+    }, link.provider),
     "cloneBucket": (String path) => new SimpleActionNode(path, (Map<String, dynamic> params) {
       var tpath = new Path(path);
       var sourceBucket = link[tpath.parentPath];
@@ -111,7 +111,7 @@ main(List<String> args) async {
 
       link.addNode(npath, sourceBucket.save());
       isSaveScheduled = true;
-    }),
+    }, link.provider),
     "delete": (String path) => new SimpleActionNode(path, (Map<String, dynamic> params) {
       var p = new Path(path).parentPath;
       link.removeNode(p);
@@ -121,7 +121,7 @@ main(List<String> args) async {
       }
       isSaveScheduled = true;
       return {};
-    }),
+    }, link.provider),
     "createEntry": (String path) => new SimpleActionNode(path, (Map<String, dynamic> params) {
       var name = params["name"];
       var type = params["type"];
@@ -144,7 +144,7 @@ main(List<String> args) async {
       link.addNode(p, map);
 
       isSaveScheduled = true;
-    }),
+    }, link.provider),
     "bucket": (String path) {
       link.removeNode("${path}/Create_Bucket");
       link.removeNode("${path}/Create_Entry");
