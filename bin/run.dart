@@ -73,6 +73,10 @@ final Map<String, dynamic> CLONE_BUCKET = {
 };
 
 class StorageNodeProvider extends SimpleNodeProvider implements SerializableNodeProvider, MutableNodeProvider {
+  StorageNodeProvider() {
+    SimpleNodeProvider.instance = this;
+  }
+
   @override
   Map save() {
     var x = super.save();
@@ -190,7 +194,7 @@ bool isSaveScheduled = false;
 Timer timer;
 
 class BucketNode extends SimpleNode {
-  BucketNode(String path) : super(path);
+  BucketNode(String path) : super(path, link.provider);
 
   @override
   void onCreated() {
