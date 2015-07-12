@@ -17,7 +17,8 @@ final Map<String, dynamic> CREATE_ENTRY = {
     },
     {
       "name": "type",
-      "type": buildEnumType([
+      "type": "enum",
+      "editor": buildEnumType([
         "string",
         "number",
         "bool",
@@ -31,7 +32,8 @@ final Map<String, dynamic> CREATE_ENTRY = {
     },
     {
       "name": "editor",
-      "type": buildEnumType([
+      "type": "enum",
+      "editor": buildEnumType([
         "none",
         "textarea",
         "password",
