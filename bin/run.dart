@@ -116,9 +116,10 @@ main(List<String> args) async {
     }, link.provider),
     "delete": (String path) => new SimpleActionNode(path, (Map<String, dynamic> params) {
       var p = new Path(path).parentPath;
+      var n = link.getNode(p);
       link.removeNode(p);
       if (listeners.containsKey(p)) {
-        listeners[p].cancel();
+        n.unsubscribe(listeners[p]);
         listeners.remove(p);
       }
       isSaveScheduled = true;
@@ -247,9 +248,9 @@ class EntryNode extends SimpleNode {
       r"$columns": []
     });
 
-    listeners[path] = link.onValueChange(path).listen((x) async {
+    listeners[path] = (ValueUpdate update) {
       isSaveScheduled = true;
-    });
+    };
   }
 
   @override
@@ -266,4 +267,4 @@ class EntryNode extends SimpleNode {
   }
 }
 
-Map<String, StreamSubscription> listeners = {};
+Map<String, Function> listeners = {};
