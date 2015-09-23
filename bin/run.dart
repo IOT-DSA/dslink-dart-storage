@@ -118,10 +118,6 @@ main(List<String> args) async {
       var p = new Path(path).parentPath;
       var n = link.getNode(p);
       link.removeNode(p);
-      if (listeners.containsKey(p)) {
-        n.unsubscribe(listeners[p]);
-        listeners.remove(p);
-      }
       isSaveScheduled = true;
       return {};
     }, link.provider),
@@ -190,6 +186,7 @@ main(List<String> args) async {
   });
 
   link.connect();
+  link.save();
 }
 
 bool isSaveScheduled = false;
@@ -248,9 +245,12 @@ class EntryNode extends SimpleNode {
       r"$columns": []
     });
 
-    listeners[path] = (ValueUpdate update) {
-      isSaveScheduled = true;
-    };
+    subscribe(onValueUpdate);
+  }
+
+  @override
+  void onRemoving() {
+    unsubscribe(onValueUpdate);
   }
 
   @override
@@ -262,9 +262,12 @@ class EntryNode extends SimpleNode {
       x.remove("Clone_Bucket");
       x.remove("Delete_Bucket");
       x.remove("Delete_Entry");
+      x.remove("Clone");
     }
     return x;
   }
 }
 
-Map<String, Function> listeners = {};
+final Function onValueUpdate = (ValueUpdate update) {
+  isSaveScheduled = true;
+};
